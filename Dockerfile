@@ -7,7 +7,9 @@
 #   - squidfunk/mkdocs-material: https://github.com/squidfunk/mkdocs-material/blob/master/Dockerfile
 #   - jaywhj/mkdocs-materialx:   https://github.com/jaywhj/mkdocs-materialx/blob/main/Dockerfile
 
-FROM python:3.14-alpine3.24 AS build
+ARG BASE_IMAGE=python:3.14-alpine3.24
+
+FROM ${BASE_IMAGE} AS build
 
 # Build-time flags
 ARG WITH_PLUGINS=true
@@ -44,8 +46,22 @@ RUN . ./versions.env                                                            
 # From empty image
 FROM scratch
 
+ARG BASE_IMAGE
+
 # Copy all from build
 COPY --from=build / /
+
+# OCI annotations, see https://github.com/opencontainers/image-spec/blob/main/annotations.md
+# org.opencontainers.image.version/created/revision are added at push time by the release
+# workflow (docker/metadata-action), since they depend on the release, not the build.
+LABEL org.opencontainers.image.title="properdocs-materialx" \
+      org.opencontainers.image.description="ProperDocs + MaterialX on Alpine: a maintained, drop-in successor to the MkDocs + mkdocs-material Docker image." \
+      org.opencontainers.image.url="https://github.com/qligier/properdocs-materialx" \
+      org.opencontainers.image.source="https://github.com/qligier/properdocs-materialx" \
+      org.opencontainers.image.documentation="https://github.com/qligier/properdocs-materialx#readme" \
+      org.opencontainers.image.vendor="Quentin Ligier" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.base.name="${BASE_IMAGE}"
 
 # Set working directory
 WORKDIR /docs

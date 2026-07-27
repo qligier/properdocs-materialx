@@ -107,6 +107,15 @@ The image can be customized at build time:
 docker build --build-arg WITH_PLUGINS=false -t properdocs-materialx .
 ```
 
+## Image labels
+
+The image carries the standard [OCI annotations](https://github.com/opencontainers/image-spec/blob/main/annotations.md)
+(`org.opencontainers.image.title`, `.description`, `.url`, `.source`, `.documentation`, `.vendor`,
+`.licenses`, `.base.name`) as static `LABEL`s in the [Dockerfile](Dockerfile). The release-specific
+ones — `.version`, `.created`, `.revision` — aren't baked into the Dockerfile itself, since they
+depend on the release, not the build; the [release workflow](.github/workflows/release.yml) adds
+them at push time via [`docker/metadata-action`](https://github.com/docker/metadata-action).
+
 ## Adding extra plugins
 
 To add third-party plugins on top of this image, extend it with your own Dockerfile:
@@ -146,10 +155,9 @@ migration cost.
 
 ## License
 
-This project only provides the Dockerfile packaging ProperDocs and MaterialX; it carries no license restrictions on 
-its own beyond the license of its content below.
-ProperDocs is distributed under the BSD license, and MaterialX under the MIT license.
-See their respective repositories for details:
+This project (the Dockerfile, workflow, and documentation) is distributed under the [MIT license](LICENSE).
+It only packages ProperDocs and MaterialX; ProperDocs is distributed under the BSD license, and MaterialX
+under the MIT license. See their respective repositories for details:
 
 - [properdocs/properdocs](https://github.com/properdocs/properdocs)
 - [jaywhj/mkdocs-materialx](https://github.com/jaywhj/mkdocs-materialx)

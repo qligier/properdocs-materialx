@@ -1,5 +1,10 @@
 # properdocs-materialx
 
+[![Docker Pulls](https://img.shields.io/docker/pulls/qligier/properdocs-materialx)](https://hub.docker.com/r/qligier/properdocs-materialx/)
+[![Release](https://github.com/qligier/properdocs-materialx/actions/workflows/release.yml/badge.svg)](https://github.com/qligier/properdocs-materialx/actions/workflows/release.yml)
+![GitHub last commit](https://img.shields.io/github/last-commit/qligier/properdocs-materialx)
+
+
 A Docker image, built on Alpine Linux, bundling [ProperDocs](https://properdocs.org/) — the community-maintained 
 successor to [MkDocs](https://www.mkdocs.org/) — with [MaterialX](https://github.com/jaywhj/mkdocs-materialx) — the 
 community-maintained successor to [mkdocs-material](https://squidfunk.github.io/mkdocs-material/).

@@ -2,6 +2,9 @@ name: Release
 
 on:
   workflow_dispatch:
+  # Weekly rebuild to pick up security fixes from the base image, Alpine and PyPI dependencies
+  schedule:
+    - cron: '42 5 * * 1'
 
 env:
   IMAGE_NAME: qligier/properdocs-materialx

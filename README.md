@@ -136,7 +136,9 @@ Then build and use your own image the same way as described above.
 
 ## Releasing
 
-The [release workflow](.github/workflows/release.yml) is triggered manually (`workflow_dispatch`).
+The [release workflow](.github/workflows/release.yml) is triggered manually (`workflow_dispatch`), and runs
+weekly (Monday 05:42 UTC) to rebuild the current version with the latest base image, Alpine packages and dependency
+fixes.
 It builds for `linux/amd64` and `linux/arm64` and pushes to Docker Hub, tagged from the semver `MATERIALX_VERSION` 
 in [`versions.env`](versions.env):
 

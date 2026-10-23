@@ -8,6 +8,7 @@ on:
 
 env:
   IMAGE_NAME: qligier/properdocs-materialx
+  TEST_IMAGE: properdocs-materialx:test
 
 jobs:
   build-and-push:
@@ -48,6 +49,26 @@ jobs:
             type=semver,pattern={{major}},value=${{ steps.versions.outputs.materialx_version }}
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+
+      # Build each platform locally and check that the image works before pushing anything; the builder cache is then
+      # reused by the push step. The test site uses the default 'search' plugin, which runs the pagefind binary.
+      - name: Test image
+        run: |
+          site="${RUNNER_TEMP}/test-site"
+          for platform in linux/amd64 linux/arm64; do
+            echo "::group::Test ${platform}"
+            docker buildx build --platform "${platform}" --load --tag "${TEST_IMAGE}" .
+            docker run --rm --platform "${platform}" "${TEST_IMAGE}" --version
+            docker run --rm --platform "${platform}" --entrypoint sh "${TEST_IMAGE}" -c \
+              'git --version && ssh -V && pngquant --version && python -c "import cairosvg, PIL.Image, lxml.etree"'
+            rm -rf "${site}" && mkdir "${site}"
+            docker run --rm --platform "${platform}" --user "$(id -u):$(id -g)" -v "${site}:/docs" "${TEST_IMAGE}" new .
+            printf 'theme:\n  name: materialx\n' >> "${site}/properdocs.yml"
+            docker run --rm --platform "${platform}" --user "$(id -u):$(id -g)" -v "${site}:/docs" "${TEST_IMAGE}" build
+            test -f "${site}/site/index.html"
+            test -f "${site}/site/search/pagefind.js"
+            echo "::endgroup::"
+          done
 
       - name: Build and push
         uses: docker/build-push-action@v7

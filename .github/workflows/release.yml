@@ -38,9 +38,9 @@ jobs:
           images: ${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
-            type=semver,pattern={{major}},value=${{ steps.versions.outputs.materialx_version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.versions.outputs.materialx_version }}
             type=semver,pattern={{version}},value=${{ steps.versions.outputs.materialx_version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.versions.outputs.materialx_version }}
+            type=semver,pattern={{major}},value=${{ steps.versions.outputs.materialx_version }}
 
       - name: Build and push
         uses: docker/build-push-action@v7

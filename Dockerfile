@@ -51,6 +51,9 @@ ARG BASE_IMAGE
 # Copy all from build
 COPY --from=build / /
 
+# Default locale; the base image's environment is not carried over from the build stage
+ENV LANG=C.UTF-8
+
 # OCI annotations, see https://github.com/opencontainers/image-spec/blob/main/annotations.md
 # org.opencontainers.image.version/created/revision are added at push time by the release
 # workflow (docker/metadata-action), since they depend on the release, not the build.

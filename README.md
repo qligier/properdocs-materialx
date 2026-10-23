@@ -27,6 +27,7 @@ instead of MkDocs.
 - **Entrypoint**: `properdocs`, started via [`tini`](https://github.com/krallin/tini) for proper signal handling
 - **Working directory**: `/docs`
 - **Exposed port**: `8000` (development server)
+- **Locale**: `LANG=C.UTF-8` (override with `-e LANG=...`)
 
 ## Usage
 

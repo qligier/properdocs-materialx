@@ -15,7 +15,6 @@ FROM ${BASE_IMAGE} AS build
 ARG WITH_PLUGINS=true
 
 # Environment variables
-ENV PACKAGES=/usr/local/lib/python3.14/site-packages
 ENV PYTHONDONTWRITEBYTECODE=1
 
 # Set build directory
@@ -26,20 +25,20 @@ COPY versions.env versions.env
 
 # Perform build and cleanup artifacts and caches
 RUN . ./versions.env                                                                                                   \
-  && apk upgrade --update-cache -a                                                                                     \
-  && apk add --no-cache cairo freetype-dev git git-fast-import jpeg-dev openssh pngquant tini zlib-dev                 \
-  && apk add --no-cache --virtual .build gcc g++ libffi-dev musl-dev                                                   \
-  && pip install --no-cache-dir --upgrade pip                                                                          \
-  && pip install --no-cache-dir "properdocs==${PROPERDOCS_VERSION}"                                                    \
+  && apk upgrade --no-cache -a                                                                                         \
+  && apk add --no-cache cairo freetype git git-fast-import libjpeg-turbo openssh-client pngquant tini zlib             \
+  && apk add --no-cache --virtual .build freetype-dev gcc g++ jpeg-dev libffi-dev musl-dev zlib-dev                    \
+  && pip install --no-cache-dir --no-compile --upgrade pip                                                             \
+  && pip install --no-cache-dir --no-compile "properdocs==${PROPERDOCS_VERSION}"                                       \
   &&                                                                                                                   \
     if [ "${WITH_PLUGINS}" = "true" ]; then                                                                            \
-      pip install --no-cache-dir "mkdocs-materialx[recommended,imaging]==${MATERIALX_VERSION}";                        \
+      pip install --no-cache-dir --no-compile "mkdocs-materialx[recommended,imaging]==${MATERIALX_VERSION}";           \
     else                                                                                                               \
-      pip install --no-cache-dir "mkdocs-materialx==${MATERIALX_VERSION}";                                             \
+      pip install --no-cache-dir --no-compile "mkdocs-materialx==${MATERIALX_VERSION}";                                \
     fi                                                                                                                 \
   && apk del .build                                                                                                    \
   && rm -rf /tmp/* /root/.cache                                                                                        \
-  && find ${PACKAGES} -type f -path "*/__pycache__/*" -exec rm -f {} \;                                                \
+  && find /usr/local -depth -type d -name __pycache__ -exec rm -rf {} +                                                \
   && git config --system --add safe.directory /docs                                                                    \
   && git config --system --add safe.directory /site
 

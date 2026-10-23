@@ -28,6 +28,7 @@ instead of MkDocs.
 - **Working directory**: `/docs`
 - **Exposed port**: `8000` (development server)
 - **Locale**: `LANG=C.UTF-8` (override with `-e LANG=...`)
+- **User**: `root` (see [Running as your own user](#running-as-your-own-user))
 
 ## Usage
 
@@ -76,6 +77,23 @@ Pages, a CDN, or your own web server).
 ```bash
 docker run --rm -it -v ${PWD}:/docs -v ~/.ssh:/root/.ssh qligier/properdocs-materialx gh-deploy
 ```
+
+### Running as your own user
+
+The image runs as `root`, so on Linux the files it writes into the mounted directory (the `site/` directory, or the
+files created by `new`) are owned by `root`. To have them owned by your own user, pass `--user`:
+
+```bash
+docker run --rm -it --user "$(id -u):$(id -g)" -v ${PWD}:/docs qligier/properdocs-materialx build
+```
+
+This works the same way for `new` and `serve`. A few caveats:
+
+- `gh-deploy` over SSH needs the default `root` user: OpenSSH refuses to run for a user ID that has no entry in
+  `/etc/passwd`. Deploy as `root`, or push over HTTPS with a token instead.
+- Don't use `--user` with rootless Docker or Podman: there, `root` in the container already maps to your own user,
+  and any other user ID can't write to the mounted directory.
+- Docker Desktop on macOS doesn't need it, as files in the mounted directory always end up owned by your user.
 
 ### Configuration file
 

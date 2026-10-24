@@ -1,0 +1,93 @@
+name: Update versions
+
+on:
+  workflow_dispatch:
+  # Daily check for new ProperDocs and MaterialX releases on PyPI
+  schedule:
+    - cron: '0 8 * * *'
+
+jobs:
+  update-versions:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Bumps each pinned version in versions.env and README.md to the latest release on PyPI, if it is newer. Outputs
+      # the pull request title only if something was bumped.
+      - name: Check for new versions
+        id: check
+        shell: bash
+        run: |
+          . ./versions.env
+          body="${RUNNER_TEMP}/pr-body.md"
+          changes=()
+          bump() {
+            local variable="$1" package="$2" label="$3" current="$4" latest file
+            latest=$(curl -fsSL --retry 3 "https://pypi.org/pypi/${package}/json" | jq -r '.info.version')
+            # Only accept plain release versions, as they are written into files and used for the semver image tags
+            if [[ ! "${latest}" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+              echo "::error::Unexpected latest version of ${package} on PyPI: '${latest}'"
+              exit 1
+            fi
+            if [[ "$(printf '%s\n' "${current}" "${latest}" | sort -V | tail -n 1)" == "${current}" ]]; then
+              echo "${label} ${current} is up to date (latest: ${latest})"
+              return 0
+            fi
+            echo "${label}: ${current} -> ${latest}"
+            sed -i "s/^${variable}=.*/${variable}=${latest}/" versions.env README.md
+            for file in versions.env README.md; do
+              if ! grep -qx "${variable}=${latest}" "${file}"; then
+                echo "::error::Could not update ${variable} in ${file}"
+                exit 1
+              fi
+            done
+            changes+=("${label} ${latest}")
+            echo "- ${label}: ${current} → [${latest}](https://pypi.org/project/${package}/${latest}/)" >> "${body}"
+          }
+          bump PROPERDOCS_VERSION properdocs ProperDocs "${PROPERDOCS_VERSION}"
+          bump MATERIALX_VERSION mkdocs-materialx MaterialX "${MATERIALX_VERSION}"
+          if [[ ${#changes[@]} -gt 0 ]]; then
+            title="Update to ${changes[0]}"
+            if [[ ${#changes[@]} -gt 1 ]]; then
+              title+=" and ${changes[1]}"
+            fi
+            {
+              echo
+              echo "The image is published by the next weekly run of the" \
+                "[release workflow](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/workflows/release.yml)" \
+                "after merging, or right away by running it manually."
+            } >> "${body}"
+            echo "title=${title}" >> "${GITHUB_OUTPUT}"
+          fi
+
+      # Reuses the same branch, so a pending pull request is updated instead of a new one being opened. The branch is
+      # only pushed if its content changed, so that the same update isn't pushed again every day.
+      - name: Open pull request
+        if: steps.check.outputs.title != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: ${{ steps.check.outputs.title }}
+          BRANCH: update-versions
+        run: |
+          body="${RUNNER_TEMP}/pr-body.md"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add versions.env README.md
+          git commit --quiet --message "${TITLE}"
+          if git fetch --quiet --depth=1 origin "${BRANCH}" 2>/dev/null && git diff --quiet FETCH_HEAD HEAD; then
+            echo "Branch ${BRANCH} is already up to date"
+          else
+            git push --force origin "HEAD:refs/heads/${BRANCH}"
+          fi
+          pr=$(gh pr list --head "${BRANCH}" --state open --json url,isCrossRepository \
+            --jq '[.[] | select(.isCrossRepository | not)][0].url // empty')
+          if [[ -n "${pr}" ]]; then
+            gh pr edit "${pr}" --title "${TITLE}" --body-file "${body}"
+          else
+            gh pr create --base "${GITHUB_REF_NAME}" --head "${BRANCH}" --title "${TITLE}" --body-file "${body}"
+          fi

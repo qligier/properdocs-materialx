@@ -113,7 +113,7 @@ The exact `properdocs` and `mkdocs-materialx` versions installed into the image 
 
 ```
 PROPERDOCS_VERSION=1.6.7
-MATERIALX_VERSION=10.2.1
+MATERIALX_VERSION=10.2.2
 ```
 
 To upgrade, bump the versions in that file — the next build picks them up automatically, and the
